@@ -1,0 +1,41 @@
+body {
+    background-color: black;
+}
+
+#container {
+    /* VERY IMPORTANT */
+    position: relative; 
+    /* background-color: aqua; */
+    /* padding: 20px; */
+    /* display: flex; */
+    /* border: 1px solid red; */
+    /* left: 50%;
+transform: translateX(-50%);
+place-items: center; */
+    width: 80%;
+    height: 30vh;
+}
+
+#agent-bg {
+    position: absolute;
+    width: 30%;
+    z-index: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 150px;
+    opacity: 0.6;
+}
+
+#agent-portrait {
+    position: absolute;
+    width: 70%;
+    z-index: 1;
+    left: 50%;  
+    transform: translateX(-50%);
+}
+
+#main-container {
+    display: flex;
+    flex-direction: row;
+    color: white;
+}

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API</title>
+</head>
+<body>
+    <h1>Peter's weather app</h1>
+
+    <h2>Map</h2>
+    <div id='map' style='width: 400px; height: 300px;'></div>
+
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
+<link href='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css' rel='stylesheet' />
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiaG9hbmdkZXN1IiwiYSI6ImNsbGVzNTl0YzBvbzAzZHRqNjRzbmRteXEifQ.WUoxSqhcHmNxuciXOUjHmA';
+const map = new mapboxgl.Map({
+	container: 'map', // container ID
+	style: 'mapbox://styles/mapbox/streets-v12', // style URL
+	center: [-74.5, 40], // starting position [lng, lat]
+	zoom: 9, // starting zoom
+});
+</script>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
+<!-- consume API -->

@@ -1,0 +1,3 @@
+[submodule "clones/valorant-agents-index"]
+	path = clones/valorant-agents-index
+	url = https://github.com/PeterHuynh123/valorant-agents-index

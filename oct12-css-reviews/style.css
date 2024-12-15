@@ -1,0 +1,12 @@
+#logo-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center; /* align items VERTICALLY to the container */
+    border: 1px solid red;
+    justify-content: center; /* align items HORIZONTAILLY to the container */
+}
+
+/* old way */
+#logo-container img {
+    width: 100px;
+}

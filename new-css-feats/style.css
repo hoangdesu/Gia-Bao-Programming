@@ -1,0 +1,10 @@
+/* #container p {
+    color: red;
+} */
+
+/* nested CSS */
+#container {
+    p {
+        color: blue;
+    }
+}

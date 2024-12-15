@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        form {
+            position: absolute;
+            bottom: 32px;
+            left: 200px;
+            
+
+            input {
+                padding: 16px;
+            }
+
+            button {
+                padding: 16px;
+            }
+        }
+
+        .user {
+            background-color: aqua;
+            text-align: right;
+        }
+
+        .bot {
+            background-color: bisque;
+        }   
+        
+        #chat-container li {
+            margin-bottom: 16px;
+
+        }
+    </style>
+</head>
+<body>
+    <h1>Gemini chatbot fullstack demo</h1>
+
+    <form>
+        <!-- <label for="">Chat</label> -->
+        <input type="text" name="userChat"> 
+        <button id="submitBtn">Send</button>
+    </form>
+
+    <ul id="chat-container">
+        <!-- <li>Human: hey</li>
+        <li>Bot: wassup</li> -->
+    </ul>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown.js/0.5.0/markdown.min.js" integrity="sha512-kaDP6dcDG3+X87m9SnhyJzwBMKrYnd2tLJjGdBrZ9yEL8Zcl2iJRsPwylLkbd2g3QC5S8efV3sgwI5r73U0HnA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script>
+        const chatContainer = document.querySelector('#chat-container');
+        const form = document.querySelector('form');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const userChat = form.userChat.value;
+            console.log(userChat);
+
+            const userLi = document.createElement('li');
+            userLi.textContent = userChat;
+            userLi.className = 'user';
+            chatContainer.append(userLi);
+
+            // clear the input after chat
+            form.userChat.value = '';
+
+            const data = {
+                content: userChat
+            }
+
+            const response = await axios.post('/chat', data);
+            
+            // const formData = new FormData();
+            // formData.append("userChat", userChat);
+
+            // const response = await fetch('/chat', {
+            //     method: 'POST',
+            //     // body: { userChat: { content: userChat }},
+            //     body: formData,
+            //     // headers: {
+            //     //     'Accept': 'application/json',
+            //     //     'Content-Type': 'application/json'
+            //     // },
+            //     headers: {'Content-Type':'application/x-www-form-urlencoded'}
+            // });
+
+            console.log(response.data);
+            const botLi = document.createElement('li');
+            botLi.innerHTML = markdown.toHTML(response.data);
+            botLi.className = 'bot';
+            chatContainer.append(botLi);
+            
+        });
+
+
+
+    </script>
+</body>
+</html>

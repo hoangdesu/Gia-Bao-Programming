@@ -1,0 +1,16 @@
+@BASE_URL=http://127.0.0.1:8000
+
+@GUESS=5
+GET {{BASE_URL}}/guess-the-number/{{GUESS}}
+
+
+###
+GET {{BASE_URL}}/search?query=fast+api+python
+
+
+###
+GET {{BASE_URL}}/search
+
+
+###
+GET {{BASE_URL}}/hi?first_name=brian&last_name=nguyen+quoc
