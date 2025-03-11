@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <button id="minus">-</button>
+    <span id="counter">Counter: 0</span>
+    <button id="plus">+</button>
+
+    <script>
+        const minusBtn = document.querySelector('#minus');
+        const plusBtn = document.querySelector('#plus');
+        const counterSpan = document.querySelector('#counter');
+
+        let counter = 0;
+        plusBtn.addEventListener('click', () => {
+            counter++;
+            console.log('new counter:', counter);
+            
+            // DONT FORGET TO ALSO UPDATE THE UI!!!
+            counterSpan.textContent = `Counter: ${counter}`;
+
+        })
+    </script>
+</body>
+</html>
