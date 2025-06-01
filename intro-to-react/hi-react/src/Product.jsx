@@ -1,8 +1,16 @@
 import { useState } from 'react';
 
+// ALL the classes inside this css will be visible to the entire webpage
+// import './product.css';
+
+// using CSS modules to scope the css to this component only!!
+import productStyles from './product.module.css';
+
 export default function Product(props) {
     // Props: input values (object) to a React component (function)
     const { productName } = props;
+
+    console.log(`Product component "${productName} re-rendered"`);
 
     // make sure the prop names match
 
@@ -24,7 +32,12 @@ export default function Product(props) {
 
 
     return (
-        <div>
+        <div 
+            // style={{ border: '1px solid red', marginBottom: '16px', fontSize: '' }}
+            // inline css
+            // className='product-container'
+            className={productStyles.productContainer}
+        >
             <h2>{productName}</h2>
             <img src={props.productImage} alt="" width={400} />
             <div>
