@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
@@ -10,10 +10,38 @@ function App() {
   // changing the states will also change the UI
 
   const [todos, setTodos] = useState([
-    { id: 1, name: 'create frontend', isEditing: false },
-    { id: 2, name: 'make backend', isEditing: false },
-    { id: 3, name: 'create sql', isEditing: false },
+    // { id: 1, name: 'create frontend', isEditing: false },
+    // { id: 2, name: 'make backend', isEditing: false },
+    // { id: 3, name: 'create sql', isEditing: false },
   ]);
+
+  
+  // Only call the function after the component has been mounted!
+  // Good for fetching data
+  useEffect(() => {
+    // console.log('Component mounted!');
+    
+    fetch('http://localhost:7891/todos')
+      .then(res => res.json())
+      .then(todos => {
+        console.log(todos);
+
+        const todoList = todos.map((todo, index) => {
+          return {
+            id: index + 1,
+            name: todo,
+            isEditing: false
+          }
+        });
+
+        setTodos(todoList);
+        
+      });
+
+  }, []);
+
+  
+  console.log('App component re-renders!');
 
   const inputRef = useRef(null);
 
