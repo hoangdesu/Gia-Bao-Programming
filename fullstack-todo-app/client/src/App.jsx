@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
@@ -15,6 +15,18 @@ function App() {
     // { id: 3, name: 'create sql', isEditing: false },
   ]);
 
+  const [todoLength, setTodoLength] = useState(todos.length);
+
+  // Derived value
+  // const len = todos.length;
+
+  // Simple, plain value -> not getting updated
+  // let counter = 1;
+
+  // const updateCounter = () => {
+  //   counter++;
+  //   console.log('counter =', counter);
+  // }
   
   // Only call the function after the component has been mounted!
   // Good for fetching data
@@ -40,6 +52,11 @@ function App() {
 
   }, []);
 
+  // will wait for the latest state of todos to complete updating
+  useEffect(() => {
+    setTodoLength(todos.length);
+  }, [todos]);
+
   
   console.log('App component re-renders!');
 
@@ -51,18 +68,51 @@ function App() {
     console.log(evt.target[0].value);
     const todoValue = evt.target[0].value;
 
+    // 1. prevent empty value
+    if (!todoValue) {
+      alert('Please enter value');
+      return;
+    }
+
+    // 2. also add the todo to the server
+    fetch('http://localhost:7891/todos', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({data: todoValue})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(updatedTodoList => {
+      const todoList = updatedTodoList.map((todo, index) => {
+          return {
+            id: index + 1,
+            name: todo,
+            isEditing: false
+          }
+        });
+      setTodos(todoList);
+    })
+
     // todos.push(todoValue);
-    console.log(todos);
+    // console.log(todos);
 
-    const newTodo = {
-      id: todos[todos.length - 1].id + 1,
-      name: todoValue,
-      isEditing: false,
-    };
+    // const newTodo = {
+    //   // id: todos[todos.length - 1].id + 1,
+    //   id: Math.random(),
+    //   name: todoValue,
+    //   isEditing: false,
+    // };
 
-    const newTodos = [...todos, newTodo];
+    // const newTodos = [...todos, newTodo];
 
-    setTodos(newTodos);
+    // setTodos(newTodos);
+    // // setTodoLength(todos.length); // cannot get the latest state of the todos[]
 
     evt.target[0].value = '';
   };
@@ -73,6 +123,7 @@ function App() {
     const filteredTodos = todos.filter((todo) => todo !== todoStr);
 
     setTodos(filteredTodos);
+    // setTodoLength(todos.length); // cannot get the latest state of the todos[]
   };
 
   const toggleTodo = (todo) => {
@@ -116,14 +167,22 @@ function App() {
     }
   };
 
+
+
   return (
     <>
+      {/* <div>
+        <button onClick={updateCounter}>Count: {counter}</button>
+      </div> */}
+
       <h1>TODO app</h1>
 
       <form action='' onSubmit={formSubmitHandler}>
         <input type='text' />
         <button>Add</button>
       </form>
+
+      <p>There are {todoLength} TODOs</p>
 
       <ul>
         {todos.map((todo) => {
