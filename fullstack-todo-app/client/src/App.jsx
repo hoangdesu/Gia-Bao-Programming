@@ -27,29 +27,27 @@ function App() {
   //   counter++;
   //   console.log('counter =', counter);
   // }
-  
+
   // Only call the function after the component has been mounted!
   // Good for fetching data
   useEffect(() => {
     // console.log('Component mounted!');
-    
+
     fetch('http://localhost:7891/todos')
-      .then(res => res.json())
-      .then(todos => {
+      .then((res) => res.json())
+      .then((todos) => {
         console.log(todos);
 
         const todoList = todos.map((todo, index) => {
           return {
             id: index + 1,
             name: todo,
-            isEditing: false
-          }
+            isEditing: false,
+          };
         });
 
         setTodos(todoList);
-        
       });
-
   }, []);
 
   // will wait for the latest state of todos to complete updating
@@ -57,7 +55,6 @@ function App() {
     setTodoLength(todos.length);
   }, [todos]);
 
-  
   console.log('App component re-renders!');
 
   const inputRef = useRef(null);
@@ -76,28 +73,28 @@ function App() {
 
     // 2. also add the todo to the server
     fetch('http://localhost:7891/todos', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({data: todoValue})
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data: todoValue }),
     })
-    .then(response => {
+      .then((response) => {
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
-    })
-    .then(updatedTodoList => {
-      const todoList = updatedTodoList.map((todo, index) => {
+      })
+      .then((updatedTodoList) => {
+        const todoList = updatedTodoList.map((todo, index) => {
           return {
             id: index + 1,
             name: todo,
-            isEditing: false
-          }
+            isEditing: false,
+          };
         });
-      setTodos(todoList);
-    })
+        setTodos(todoList);
+      });
 
     // todos.push(todoValue);
     // console.log(todos);
@@ -118,12 +115,32 @@ function App() {
   };
 
   const removeTodoHandler = (todoStr) => {
-    console.log('removing...', todoStr);
+    // Dont do this, since it violates the single source of truth principle
+    // console.log('removing...', todoStr);
 
-    const filteredTodos = todos.filter((todo) => todo !== todoStr);
+    // const filteredTodos = todos.filter((todo) => todo.name !== todoStr);
 
-    setTodos(filteredTodos);
+    // setTodos(filteredTodos);
     // setTodoLength(todos.length); // cannot get the latest state of the todos[]
+
+    fetch('http://localhost:7891/todos', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ todo_toRemove: todoStr }),
+    })
+      .then(res => res.json())
+      .then(updatedTodos => {
+        const newTodos = updatedTodos.map(t => (
+          {
+            id: t,
+            name: t,
+            isEditing: false
+          }
+        ))
+        setTodos(newTodos);
+      });
   };
 
   const toggleTodo = (todo) => {
@@ -167,8 +184,6 @@ function App() {
     }
   };
 
-
-
   return (
     <>
       {/* <div>
@@ -193,7 +208,7 @@ function App() {
                   <p>{todo.name}</p>
                   <div>
                     <button onClick={() => toggleTodo(todo)}>✏️</button>
-                    <button onClick={() => removeTodoHandler(todo)}>🗑️</button>
+                    <button onClick={() => removeTodoHandler(todo.name)}>🗑️</button>
                   </div>
                 </>
               ) : (
