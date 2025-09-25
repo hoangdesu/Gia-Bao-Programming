@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
 
 const app = express();
 
@@ -10,7 +11,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-let todos = ['setup react frontend', 'create express server', 'setup a db'];
+// let todos = ['setup react frontend', 'create express server', 'setup a db'];
+
+const todosFile = fs.readFileSync('./data/todos.json', 'utf-8');
+console.log(todosFile);
+
+let todos = JSON.parse(todosFile);
+console.log(todos);
+
 
 app.get('/todos', (req, res) => {
     res.json(todos);
@@ -21,6 +29,10 @@ app.post('/todos', (req, res) => {
     // console.log(req.body);
     const { data: newTodo } = req.body;
     todos.push(newTodo);
+
+    // update the new array back into the file
+    fs.writeFileSync('./data/todos.json', JSON.stringify(todos, null, 4));
+
     return res.json(todos);
 });
 
@@ -33,7 +45,9 @@ app.delete('/todos', (req, res) => {
     // mutable vs immutable 
     todos = todos.filter((todo) => todo !== rmTodo);
 
-    console.log('new todos:', todos);
+    // console.log('new todos:', todos);
+
+    fs.writeFileSync('./data/todos.json', JSON.stringify(todos, null, 4));
 
     return res.json(todos);
 });

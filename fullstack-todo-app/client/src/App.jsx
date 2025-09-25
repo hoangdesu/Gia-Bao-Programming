@@ -17,6 +17,9 @@ function App() {
 
   const [todoLength, setTodoLength] = useState(todos.length);
 
+  // when the app first load, input element is not ready yet => null
+  const inputRef = useRef(null);
+
   // Derived value
   // const len = todos.length;
 
@@ -57,7 +60,7 @@ function App() {
 
   console.log('App component re-renders!');
 
-  const inputRef = useRef(null);
+ 
 
   const formSubmitHandler = (evt) => {
     evt.preventDefault();
@@ -160,6 +163,7 @@ function App() {
   };
 
   const saveTodo = (todo) => {
+    // similar to document.querySelector('input').value
     const updatedValue = inputRef.current.value;
 
     const updatedTodos = structuredClone(todos); // [...todos]
@@ -179,6 +183,7 @@ function App() {
   };
 
   const onEditInputEnter = (evt, todo) => {
+    // Enter key
     if (evt.keyCode === 13) {
       saveTodo(todo);
     }
@@ -216,6 +221,7 @@ function App() {
                   <input
                     type='text'
                     defaultValue={todo.name}
+                    // by the time input element is ready, its ref will be saved to inputRef
                     ref={inputRef}
                     onKeyDown={(evt) => onEditInputEnter(evt, todo)}
                   />
