@@ -1,10 +1,17 @@
 import express from 'express';
 import cors from 'cors';
-import fs from 'fs';
+import fs, { stat } from 'fs';
 
 const app = express();
 
 const PORT = 7891;
+
+
+import sqlite3 from 'sqlite3';
+sqlite3.verbose();
+
+const DB_FILE = './data/todo-app.db';
+const db = new sqlite3.Database(DB_FILE);
 
 // Middlewares
 app.use(cors());
@@ -21,20 +28,53 @@ console.log(todos);
 
 
 app.get('/todos', (req, res) => {
-    res.json(todos);
+    
+    const todosDb = [];
+
+    db.serialize(() => {
+
+        db.each("SELECT * FROM todos", (err, row) => {
+            if (row) {
+                console.log('row:', row);
+                todosDb.push(row.content);
+            }
+        }, () => {
+            return res.json(todosDb);
+        });
+    });
 });
 
 
 app.post('/todos', (req, res) => {
     // console.log(req.body);
     const { data: newTodo } = req.body;
-    todos.push(newTodo);
+    // todos.push(newTodo);
 
     // update the new array back into the file
-    fs.writeFileSync('./data/todos.json', JSON.stringify(todos, null, 4));
+    // fs.writeFileSync('./data/todos.json', JSON.stringify(todos, null, 4));
 
-    return res.json(todos);
+
+    db.serialize(() => {
+        const query = 'INSERT INTO todos (content) VALUES (?)';
+        const statement = db.prepare(query);
+        statement.run(newTodo);
+
+        const todosDb = [];
+
+        db.each("SELECT * FROM todos", (err, row) => {
+            if (row) {
+                console.log('row:', row);
+                todosDb.push(row.content);
+            }
+        }, () => {
+            return res.json(todosDb);
+        });
+
+    })
+
+    // return res.json(todos);
 });
+
 
 
 app.delete('/todos', (req, res) => {
