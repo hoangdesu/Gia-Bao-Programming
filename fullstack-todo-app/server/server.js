@@ -33,10 +33,10 @@ app.get('/todos', (req, res) => {
 
     db.serialize(() => {
 
-        db.each("SELECT * FROM todos", (err, row) => {
+        db.each("SELECT * FROM todos ORDER BY created_at DESC", (err, row) => {
             if (row) {
                 console.log('row:', row);
-                todosDb.push(row.content);
+                todosDb.push(row);
             }
         }, () => {
             return res.json(todosDb);
@@ -61,7 +61,7 @@ app.post('/todos', (req, res) => {
 
         const todosDb = [];
 
-        db.each("SELECT * FROM todos", (err, row) => {
+        db.each("SELECT * FROM todos ORDER BY created_at DESC", (err, row) => {
             if (row) {
                 console.log('row:', row);
                 todosDb.push(row.content);
@@ -69,6 +69,9 @@ app.post('/todos', (req, res) => {
         }, () => {
             return res.json(todosDb);
         });
+
+        
+        res.statusCode(201).send('OK');
 
     })
 
@@ -89,7 +92,8 @@ app.delete('/todos', (req, res) => {
 
     fs.writeFileSync('./data/todos.json', JSON.stringify(todos, null, 4));
 
-    return res.json(todos);
+    return res.sendStatus(201);
+    // return res.json(todos);
 });
 
 

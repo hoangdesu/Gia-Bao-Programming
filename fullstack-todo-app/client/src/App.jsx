@@ -9,11 +9,7 @@ function App() {
   // React Hook: keeps track of the states (variables)
   // changing the states will also change the UI
 
-  const [todos, setTodos] = useState([
-    // { id: 1, name: 'create frontend', isEditing: false },
-    // { id: 2, name: 'make backend', isEditing: false },
-    // { id: 3, name: 'create sql', isEditing: false },
-  ]);
+  const [todos, setTodos] = useState([]);
 
   const [todoLength, setTodoLength] = useState(todos.length);
 
@@ -39,30 +35,20 @@ function App() {
     fetch('http://localhost:7891/todos')
       .then((res) => res.json())
       .then((todos) => {
-        console.log(todos);
 
-        const todoList = todos.map((todo, index) => {
-          return {
-            id: index + 1,
-            name: todo,
-            isEditing: false,
-          };
-        });
-
-        setTodos(todoList);
+        setTodos(todos);
       });
   }, []);
 
   // will wait for the latest state of todos to complete updating
   useEffect(() => {
     setTodoLength(todos.length);
+    console.log(todos);
   }, [todos]);
 
   console.log('App component re-renders!');
 
- 
-
-  const formSubmitHandler = (evt) => {
+const formSubmitHandler = (evt) => {
     evt.preventDefault();
     // console.log(evt);
     console.log(evt.target[0].value);
@@ -97,7 +83,17 @@ function App() {
           };
         });
         setTodos(todoList);
+
+        // NEW update
+
+        // const newTodo = {};
+
+        // const newTodos = [newTodo, ...todos];
+
+        // setTodos(newTodos);
       });
+
+    // TODO: append the new todo to the top when client receives 'OK'
 
     // todos.push(todoValue);
     // console.log(todos);
@@ -117,78 +113,6 @@ function App() {
     evt.target[0].value = '';
   };
 
-  const removeTodoHandler = (todoStr) => {
-    // Dont do this, since it violates the single source of truth principle
-    // console.log('removing...', todoStr);
-
-    // const filteredTodos = todos.filter((todo) => todo.name !== todoStr);
-
-    // setTodos(filteredTodos);
-    // setTodoLength(todos.length); // cannot get the latest state of the todos[]
-
-    fetch('http://localhost:7891/todos', {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ todo_toRemove: todoStr }),
-    })
-      .then(res => res.json())
-      .then(updatedTodos => {
-        const newTodos = updatedTodos.map(t => (
-          {
-            id: t,
-            name: t,
-            isEditing: false
-          }
-        ))
-        setTodos(newTodos);
-      });
-  };
-
-  const toggleTodo = (todo) => {
-    const updatedTodos = structuredClone(todos); // [...todos]
-
-    for (let i = 0; i < updatedTodos.length; i++) {
-      if (todo.id === updatedTodos[i].id) {
-        updatedTodos[i] = {
-          ...updatedTodos[i],
-          isEditing: !updatedTodos[i].isEditing,
-        };
-        break;
-      }
-    }
-
-    setTodos(updatedTodos);
-  };
-
-  const saveTodo = (todo) => {
-    // similar to document.querySelector('input').value
-    const updatedValue = inputRef.current.value;
-
-    const updatedTodos = structuredClone(todos); // [...todos]
-
-    for (let i = 0; i < updatedTodos.length; i++) {
-      if (todo.id === updatedTodos[i].id) {
-        updatedTodos[i] = {
-          ...updatedTodos[i],
-          name: updatedValue,
-          isEditing: false,
-        };
-        break;
-      }
-    }
-
-    setTodos(updatedTodos);
-  };
-
-  const onEditInputEnter = (evt, todo) => {
-    // Enter key
-    if (evt.keyCode === 13) {
-      saveTodo(todo);
-    }
-  };
-
   return (
     <>
       {/* <div>
@@ -206,33 +130,7 @@ function App() {
 
       <ul>
         {todos.map((todo) => {
-          return (
-            <li key={todo.id} className='todo-container'>
-              {!todo.isEditing ? (
-                <>
-                  <p>{todo.name}</p>
-                  <div>
-                    <button onClick={() => toggleTodo(todo)}>✏️</button>
-                    <button onClick={() => removeTodoHandler(todo.name)}>🗑️</button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <input
-                    type='text'
-                    defaultValue={todo.name}
-                    // by the time input element is ready, its ref will be saved to inputRef
-                    ref={inputRef}
-                    onKeyDown={(evt) => onEditInputEnter(evt, todo)}
-                  />
-                  <div>
-                    <button onClick={() => saveTodo(todo)}>✅</button>
-                    <button onClick={() => toggleTodo(todo)}>❎</button>
-                  </div>
-                </>
-              )}
-            </li>
-          );
+          return <Todo key={todo.id} todo={todo} />;
         })}
       </ul>
     </>
