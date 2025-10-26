@@ -53,7 +53,9 @@ const CameraFrame = () => {
         style={{ pointerEvents: 'auto' }}
       />
       <div className="camera-frame-content"> 
-        {!showCamera ? (
+        <img src="http://127.0.0.1:5000/video_feed" className="camera-feed" />
+        
+        {/* {!showCamera ? (
           <img 
             src={loadingGif} 
             alt="Loading" 
@@ -71,7 +73,7 @@ const CameraFrame = () => {
           // />
 
           <img src="http://127.0.0.1:5000/video_feed" className="camera-feed" />
-        )}
+        )} */}
       </div>
     </div>
   );
