@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, Response
+from flask import Flask, request, render_template, Response, jsonify
 import cv2
 import numpy as np
 import pickle
@@ -11,17 +11,37 @@ from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
 from flask import Flask, request, render_template, Response, url_for, send_from_directory
 from flask_cors import CORS
+import threading
+import queue
+import time
+
 
 # Suppress specific deprecation warnings from protobuf
-warnings.filterwarnings("ignore", category=UserWarning, module='google.protobuf')
+warnings.filterwarnings("ignore", category=UserWarning,
+                        module='google.protobuf')
 app = Flask(__name__, template_folder='templates')
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.config['ALLOWED_EXTENSIONS'] = {'jpg', 'jpeg', 'png'}
 
 CORS(app)
 
+# haircuts = {
+#     'oval': [],
+#     'heart': [],   
+# }
+
+
+# @app.route('/haircuts/<shape>')
+# def get_haircut(shape: str):
+#     haircut_images = haircuts.get(shape)
+#     return jsonify(haircut_images)
+    
+
+
+
 # Initialize MediaPipe Face Landmarker
-base_options = python.BaseOptions(model_asset_path='face_landmarker_v2_with_blendshapes.task')
+base_options = python.BaseOptions(
+    model_asset_path='face_landmarker_v2_with_blendshapes.task')
 options = vision.FaceLandmarkerOptions(base_options=base_options,
                                        output_face_blendshapes=True,
                                        output_facial_transformation_matrixes=True,
@@ -32,8 +52,10 @@ face_landmarker = vision.FaceLandmarker.create_from_options(options)
 with open('Best_RandomForest.pkl', 'rb') as f:
     face_shape_model = pickle.load(f)
 
+
 def distance_3d(p1, p2):
     return np.linalg.norm(np.array(p1) - np.array(p2))
+
 
 def calculate_face_features(coords):
     # Define indices for landmarks
@@ -49,20 +71,31 @@ def calculate_face_features(coords):
 
     # Extract features based on landmark indices
     features = []
-    landmarks_dict = {name: coords[idx] for name, idx in landmark_indices.items()}
+    landmarks_dict = {name: coords[idx]
+                      for name, idx in landmark_indices.items()}
 
     # Calculate distances between important landmarks
-    features.append(distance_3d(landmarks_dict['forehead'], landmarks_dict['chin']))  # Face height
-    features.append(distance_3d(landmarks_dict['left_cheek'], landmarks_dict['right_cheek']))  # Face width
-    features.append(distance_3d(landmarks_dict['left_eye'], landmarks_dict['right_eye']))  # Eye distance
+    features.append(distance_3d(
+        landmarks_dict['forehead'], landmarks_dict['chin']))  # Face height
+    features.append(distance_3d(
+        landmarks_dict['left_cheek'], landmarks_dict['right_cheek']))  # Face width
+    features.append(distance_3d(
+        landmarks_dict['left_eye'], landmarks_dict['right_eye']))  # Eye distance
 
     # Additional distances
-    features.append(distance_3d(landmarks_dict['nose_tip'], landmarks_dict['left_eye']))  # Nose to left eye
-    features.append(distance_3d(landmarks_dict['nose_tip'], landmarks_dict['right_eye']))  # Nose to right eye
-    features.append(distance_3d(landmarks_dict['chin'], landmarks_dict['left_cheek']))  # Chin to left cheek
-    features.append(distance_3d(landmarks_dict['chin'], landmarks_dict['right_cheek']))  # Chin to right cheek
-    features.append(distance_3d(landmarks_dict['forehead'], landmarks_dict['left_eye']))  # Forehead to left eye
-    features.append(distance_3d(landmarks_dict['forehead'], landmarks_dict['right_eye']))  # Forehead to right eye
+    features.append(distance_3d(
+        landmarks_dict['nose_tip'], landmarks_dict['left_eye']))  # Nose to left eye
+    features.append(distance_3d(
+        landmarks_dict['nose_tip'], landmarks_dict['right_eye']))  # Nose to right eye
+    features.append(distance_3d(
+        landmarks_dict['chin'], landmarks_dict['left_cheek']))  # Chin to left cheek
+    features.append(distance_3d(
+        landmarks_dict['chin'], landmarks_dict['right_cheek']))  # Chin to right cheek
+    features.append(distance_3d(
+        landmarks_dict['forehead'], landmarks_dict['left_eye']))  # Forehead to left eye
+    # Forehead to right eye
+    features.append(distance_3d(
+        landmarks_dict['forehead'], landmarks_dict['right_eye']))
 
     # Additional features
 
@@ -82,12 +115,15 @@ def calculate_face_features(coords):
 
     return np.array(features)
 
+
 def get_face_shape_label(label):
     shapes = ["Heart", "Oval", "Round", "Square"]
     return shapes[label]
 
+
 # Initialize MediaPipe Face Landmarker
-base_options = python.BaseOptions(model_asset_path='face_landmarker_v2_with_blendshapes.task')
+base_options = python.BaseOptions(
+    model_asset_path='face_landmarker_v2_with_blendshapes.task')
 options = vision.FaceLandmarkerOptions(base_options=base_options,
                                        output_face_blendshapes=True,
                                        output_facial_transformation_matrixes=True,
@@ -99,6 +135,8 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 
 # Define function to compute Euclidean distance in 3D
+
+
 def distance_3d(p1, p2):
     return np.sqrt(np.sum((np.array(p1) - np.array(p2)) ** 2))
 
@@ -139,74 +177,159 @@ def draw_landmarks_on_image(rgb_image, detection_result):
     return annotated_image
 
 
-
 def allowed_file(filename):
-        return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+# def generate_frames():
+#     cap = cv2.VideoCapture(0)
+#     while True:
+#         ret, frame = cap.read()
+#         if not ret:
+#             break
+#         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#         image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+#         detection_result = face_landmarker.detect(image)
+
+#         if detection_result.face_landmarks:
+#             for face_landmarks in detection_result.face_landmarks:
+#                 landmarks = [[lm.x, lm.y, lm.z] for lm in face_landmarks]
+#                 landmarks = np.array(landmarks)
+#                 face_features = calculate_face_features(landmarks)
+#                 face_shape_label = face_shape_model.predict([face_features])[0]
+
+#                 face_shape = get_face_shape_label(face_shape_label)
+#                 annotated_image = draw_landmarks_on_image(rgb_frame, detection_result)
+#                 cv2.putText(annotated_image, f"Face Shape: {face_shape}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+#         else:
+#             annotated_image = rgb_frame
+
+#         ret, buffer = cv2.imencode('.jpg', annotated_image)
+#         frame = buffer.tobytes()
+#         yield (b'--frame\r\n'
+#             b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
+# Global variables for shared camera data
+camera_data = {
+    'frame': None,
+    'face_shape': 'none',
+    'lock': threading.Lock()
+}
+
+
+def camera_worker():
+    """Background thread that continuously captures frames and processes face shapes"""
+    cap = cv2.VideoCapture(0)
+
+    # Set camera properties for better stability
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv2.CAP_PROP_FPS, 30)
+
+    if not cap.isOpened():
+        print("Error: Could not open camera")
+        return
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Failed to read frame from camera")
+            break
+
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+        detection_result = face_landmarker.detect(image)
+
+        face_shape = 'none'
+        annotated_image = rgb_frame
+
+        if detection_result.face_landmarks:
+            for face_landmarks in detection_result.face_landmarks:
+                landmarks = [[lm.x, lm.y, lm.z] for lm in face_landmarks]
+                landmarks = np.array(landmarks)
+                face_features = calculate_face_features(landmarks)
+                face_shape_label = face_shape_model.predict([face_features])[0]
+                face_shape = get_face_shape_label(face_shape_label)
+
+                annotated_image = draw_landmarks_on_image(
+                    rgb_frame, detection_result)
+                cv2.putText(annotated_image, f"Face Shape: {face_shape}", (
+                    50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                break
+
+        # Update shared data
+        with camera_data['lock']:
+            camera_data['frame'] = annotated_image
+            camera_data['face_shape'] = face_shape
+
+        time.sleep(0.033)  # ~30 FPS
+
+    cap.release()
+
+
+# Start the camera worker thread
+camera_thread = threading.Thread(target=camera_worker, daemon=True)
+camera_thread.start()
 
 def generate_frames():
-    cap = cv2.VideoCapture(0)
+    """Generate video frames using the shared camera data"""
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
-        detection_result = face_landmarker.detect(image)
+        with camera_data['lock']:
+            if camera_data['frame'] is not None:
+                frame = camera_data['frame'].copy()
+            else:
+                # Return a black frame if no data available yet
+                frame = np.zeros((480, 640, 3), dtype=np.uint8)
 
-        if detection_result.face_landmarks:
-            for face_landmarks in detection_result.face_landmarks:
-                landmarks = [[lm.x, lm.y, lm.z] for lm in face_landmarks]
-                landmarks = np.array(landmarks)
-                face_features = calculate_face_features(landmarks)
-                face_shape_label = face_shape_model.predict([face_features])[0]
-                
-                face_shape = get_face_shape_label(face_shape_label)
-                annotated_image = draw_landmarks_on_image(rgb_frame, detection_result)
-                cv2.putText(annotated_image, f"Face Shape: {face_shape}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        else:
-            annotated_image = rgb_frame
-
-        ret, buffer = cv2.imencode('.jpg', annotated_image)
-        frame = buffer.tobytes()
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame_bytes = buffer.tobytes()
         yield (b'--frame\r\n'
-            b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-                
-def generate_face_shape():
-    cap = cv2.VideoCapture(0)
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
-        detection_result = face_landmarker.detect(image)
+# def generate_face_shape():
+#     cap = cv2.VideoCapture(0)
+#     while True:
+#         ret, frame = cap.read()
+#         if not ret:
+#             break
+#         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#         image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+#         detection_result = face_landmarker.detect(image)
 
-        if detection_result.face_landmarks:
-            for face_landmarks in detection_result.face_landmarks:
-                landmarks = [[lm.x, lm.y, lm.z] for lm in face_landmarks]
-                landmarks = np.array(landmarks)
-                face_features = calculate_face_features(landmarks)
-                face_shape_label = face_shape_model.predict([face_features])[0]
-                face_shape = get_face_shape_label(face_shape_label)
-                annotated_image = draw_landmarks_on_image(rgb_frame, detection_result)
-                cv2.putText(annotated_image, f"Face Shape: {face_shape}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                
-                yield f"data: {face_shape}\n\n"
-        else:
-            annotated_image = rgb_frame
-            yield f"data: none\n\n"
+#         if detection_result.face_landmarks:
+#             for face_landmarks in detection_result.face_landmarks:
+#                 landmarks = [[lm.x, lm.y, lm.z] for lm in face_landmarks]
+#                 landmarks = np.array(landmarks)
+#                 face_features = calculate_face_features(landmarks)
+#                 face_shape_label = face_shape_model.predict([face_features])[0]
+#                 face_shape = get_face_shape_label(face_shape_label)
+#                 annotated_image = draw_landmarks_on_image(rgb_frame, detection_result)
+#                 cv2.putText(annotated_image, f"Face Shape: {face_shape}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+#                 yield f"data: {face_shape}\n\n"
+#         else:
+#             annotated_image = rgb_frame
+#             yield f"data: none\n\n"
 
         # ret, buffer = cv2.imencode('.jpg', annotated_image)
         # frame = buffer.tobytes()
         # yield (b'--frame\r\n'
         #     b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-            
+
+
+def generate_face_shape():
+    """Generate face shape data using the shared camera data"""
+    while True:
+        with camera_data['lock']:
+            face_shape = camera_data['face_shape']
+
+        time.sleep(1)
+        yield f"data: {face_shape}\n\n"
+
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
 
 
 @app.route('/upload', methods=['GET', 'POST'])
@@ -230,36 +353,46 @@ def upload_file():
                 # Read and process the image using OpenCV and MediaPipe
                 img = cv2.imread(file_path)
                 rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
+                image = mp.Image(
+                    image_format=mp.ImageFormat.SRGB, data=rgb_image)
                 detection_result = face_landmarker.detect(image)
 
                 if detection_result.face_landmarks:
                     for face_landmarks in detection_result.face_landmarks:
-                        landmarks = [[lm.x, lm.y, lm.z] for lm in face_landmarks]
+                        landmarks = [[lm.x, lm.y, lm.z]
+                                     for lm in face_landmarks]
                         landmarks = np.array(landmarks)
                         face_features = calculate_face_features(landmarks)
-                        face_shape_label = face_shape_model.predict([face_features])[0]
+                        face_shape_label = face_shape_model.predict([face_features])[
+                            0]
                         face_shape = get_face_shape_label(face_shape_label)
 
                         # Draw the landmarks and face shape text on the image
-                        annotated_image = draw_landmarks_on_image(rgb_image, detection_result)
-                        cv2.putText(annotated_image, f"Face Shape: {face_shape}", (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                        annotated_image = draw_landmarks_on_image(
+                            rgb_image, detection_result)
+                        cv2.putText(annotated_image, f"Face Shape: {face_shape}", (
+                            20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
                         # Save the annotated image
-                        annotated_file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'annotated_' + filename)
-                        cv2.imwrite(annotated_file_path, cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
+                        annotated_file_path = os.path.join(
+                            app.config['UPLOAD_FOLDER'], 'annotated_' + filename)
+                        cv2.imwrite(annotated_file_path, cv2.cvtColor(
+                            annotated_image, cv2.COLOR_RGB2BGR))
 
                         # Create the URL to send the annotated image to the front end
-                        file_url = url_for('uploaded_file', filename='annotated_' + filename)
+                        file_url = url_for(
+                            'uploaded_file', filename='annotated_' + filename)
                         break
                 else:
                     error = "No face detected in the image"
 
     return render_template('upload.html', face_shape=face_shape, error=error, file_url=file_url)
 
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 
 @app.route('/video_feed')
 def video_feed():
@@ -274,6 +407,36 @@ def face_shape_feed():
 @app.route('/real_time')
 def real_time():
     return render_template('real_time.html')
+
+
+@app.route('/shape-images')
+def get_shape_images():
+    image_list = []  # bytes[] , byte array
+
+    return jsonify([
+        # {
+        #     'name': 'undercut',
+        #     'image': 'undercut.jpg',
+        #     'shapes': ['oval', 'heart']
+        # },
+        # {
+        #     'name': 'quiff',
+        #     'image': 'quiff.jpg',
+        #     'shapes': ['oval', 'heart']
+        # }
+
+        {
+            'shape': 'heart',
+            'image': 'url.jpg',
+            'hairstyles': ['quiff.jpg', 'undercut.jpg']
+        }
+    ])
+
+
+@app.route("/image/<filename>")
+def get_image(filename):
+    return send_from_directory('static/hairstyles', filename)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -53,7 +53,7 @@ const CameraFrame = () => {
         style={{ pointerEvents: 'auto' }}
       />
       <div className="camera-frame-content"> 
-        <img src="http://127.0.0.1:5000/video_feed" className="camera-feed" />
+        <img src="http://127.0.0.1:5679/video_feed" className="camera-feed" />
         
         {/* {!showCamera ? (
           <img 

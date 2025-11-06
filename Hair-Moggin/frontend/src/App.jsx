@@ -11,31 +11,29 @@ const SLIDES = Array.from(Array(SLIDE_COUNT).keys());
 
 function App() {
   const [faceShape, setFaceShape] = useState('');
+  const [shapes, setShapes] = useState([]);
 
   useEffect(() => {
-    // fetch('http://127.0.0.1:5000/face_shape_feed', {
-    //   headers: {
-    //     Accept: 'text/event-stream',
-    //     // Add other custom headers or authentication tokens here
-    //   },
-    // })
-    // .then(res => {
-    //   console.log(res);
-      
-    // });
-
-    const eventSource = new EventSource('http://127.0.0.1:5000/face_shape_feed');
+    const eventSource = new EventSource('http://127.0.0.1:5679/face_shape_feed');
 
     eventSource.onmessage = (event) => {
       console.log(event.data);
       setFaceShape(event.data);
     };
 
+    fetch('http://127.0.0.1:5679/shape-images')
+      .then(res => res.json())
+      .then(data => {
+        console.log('data', data);
+        
+      });
+
+
+
     // clean up function
     return () => {
       eventSource.close();
     }
-    
   }, []);
 
   return (
@@ -43,6 +41,7 @@ function App() {
       <ThemeToogleButton />
       <header className='header'>
         <h1 className='title'>HAIR MAXXING</h1>
+
       </header>
       <main className='main'>
         <section className='camera-mobile-wrapper'>
