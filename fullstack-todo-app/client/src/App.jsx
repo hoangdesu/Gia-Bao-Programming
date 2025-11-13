@@ -2,6 +2,7 @@ import { use, useEffect, useRef, useState } from 'react';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
+import Todo from './Todo';
 
 function App() {
   // const todos = ['create frontend', 'make backend', 'create sql'];
@@ -38,6 +39,7 @@ function App() {
 
         setTodos(todos);
       });
+      
   }, []);
 
   // will wait for the latest state of todos to complete updating
